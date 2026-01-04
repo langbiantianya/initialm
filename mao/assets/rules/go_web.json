@@ -1,5 +1,5 @@
 {
-    "name":"go web基础模板",
+    "name": "go web基础模板",
     "components": [
         {
             "label": "Hello Text?",
@@ -65,6 +65,11 @@
     "variable": [
         {
             "filePath": "main.go"
+        },
+        {
+            "key": "HelloFile",
+            "type": "file",
+            "filePath": "public/static/HelloFile.docx"
         }
     ],
     "path": [

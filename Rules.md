@@ -52,14 +52,21 @@ mao/assets/template/{模板名称} 模板目录
 
 ##### 例子
 
-在这里写入需要进行模板渲染的文件路径
+在这里写入需要进行模板渲染的文件路径，type为file时必须指定key。
 
 - filePath 模板项目中的文件路径，例如`main.go`
+- type 变量类型，目前支持`text`、`file`，为空的话默认值为`text`
+- key 变量名称，目前只在类型为file时生效
 
 ```json
 "variable": [
         {
             "filePath": "main.go"
+        },
+        {
+            "key": "HelloFile",
+            "type": "file",
+            "filePath": "public/static/HelloFile.docx"
         }
     ]
 ```

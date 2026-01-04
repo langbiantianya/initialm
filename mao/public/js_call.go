@@ -39,14 +39,17 @@ func GenZip(this js.Value, args []js.Value) interface{} {
 	data := make(map[string]string)
 
 	for key, item := range exData.Data {
-		if item.Type != msg.TypeText {
+		switch item.Type {
+		case rules.TypeText:
+			data[key] = item.Value.(string)
+		case rules.TypeFile:
+			data[key] = item.Value.(string)
+		default:
 			slog.Error("目前只处理文本类型", "key", key, "type", item.Type)
 			return js.ValueOf("目前只处理文本类型")
 		}
-		data[key] = item.Value.(string)
 	}
-	// 取出name
-
+	slog.Info("收到", "exData", exData, "data", data)
 	// 使用name获取规则
 	rule, err := rules.MaoRules.GetRules(exData.Name)
 	if err != nil {
