@@ -91,7 +91,10 @@
 				for (const [key, value] of formData.entries()) {
 					// 判断value 是否为文件,是文件的话以文本方式读取转为字符串
 					if (value instanceof File) {
-						data[key] = { type: 'text', value: await value.text() };
+						// 转换为base64编码
+						const arrayBuffer = await value.arrayBuffer();
+						const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+						data[key] = { type: 'file', value: base64 };
 					} else {
 						data[key] = { type: 'text', value: value };
 					}

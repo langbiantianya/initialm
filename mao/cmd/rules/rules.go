@@ -17,9 +17,19 @@ type RuleData struct {
 	Path []PathRule `json:"path"`
 }
 
+// type Type string
+type Type string
+
+const (
+	TypeText Type = "text"
+	TypeFile Type = "file"
+)
+
 // VariableRule 单个文件的变量替换规则
 type VariableRule struct {
 	FilePath string `json:"filePath"` // 目标文件路径
+	Key      string `json:"key"`      // 变量键名
+	Type     Type   `json:"type"`     // 变量类型
 }
 
 // Substitution 单个变量的替换详情

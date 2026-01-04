@@ -10,16 +10,18 @@ import (
 	"log/slog"
 	"mao/assets"
 	"mao/cmd/rules"
+	"mao/lib"
 	"path"
+	"path/filepath"
 	"strings"
 )
 
 type DefaultTemplate struct {
-	data any
+	data map[string]string
 	rule rules.RuleData
 }
 
-func NewTempate(data any, rule rules.RuleData) Template {
+func NewTempate(data map[string]string, rule rules.RuleData) Template {
 	return DefaultTemplate{
 		data: data,
 		rule: rule,
@@ -28,7 +30,7 @@ func NewTempate(data any, rule rules.RuleData) Template {
 
 func (t DefaultTemplate) applyVariableRule(fileData []byte, filePath string) ([]byte, error) {
 	for _, variable := range t.rule.Variable {
-		if strings.Contains(filePath, variable.FilePath) {
+		if strings.Contains(filePath, variable.FilePath) && rules.TypeText == variable.Type {
 			tpl, err := template.New(variable.FilePath).Parse(string(fileData))
 			if err != nil {
 				return fileData, err
@@ -43,6 +45,41 @@ func (t DefaultTemplate) applyVariableRule(fileData []byte, filePath string) ([]
 	return fileData, nil
 }
 
+func (t DefaultTemplate) applyVariableFileRule(zw *zip.Writer) {
+	for _, variable := range t.rule.Variable {
+		if rules.TypeFile == variable.Type {
+			// 从data中获取变量值
+			fileB64Data := t.data[variable.Key]
+			fileData, err := base64.StdEncoding.DecodeString(fileB64Data)
+			if err != nil {
+				slog.Error("base64解码失败", "异常", err)
+				continue
+			}
+			info := lib.NewByteFileInfo(fileData, filepath.Base(variable.FilePath))
+
+			// 创建文件头
+			fh, err := zip.FileInfoHeader(info)
+			if err != nil {
+				slog.Error("创建文件头失败", "异常", err)
+				continue
+			}
+
+			fh.Name = filepath.Clean(variable.FilePath) // 设置文件在zip中的路径
+			fh.Method = zip.Deflate                     // 使用默认压缩算法
+			// 写入文件内容
+			fileWriter, err := zw.CreateHeader(fh)
+			if err != nil {
+				slog.Error("创建文件写入失败", "异常", err)
+				continue
+			}
+			_, err = fileWriter.Write(fileData)
+			if err != nil {
+				slog.Error("写入文件失败", "异常", err)
+			}
+		}
+	}
+}
+
 func (t DefaultTemplate) applyPathRule(relPath string) string {
 	for _, path := range t.rule.Path {
 		if relPath == path.Source {
@@ -55,6 +92,7 @@ func (t DefaultTemplate) applyPathRule(relPath string) string {
 func (t DefaultTemplate) GenZip() ([]byte, error) {
 	var buf bytes.Buffer
 	zw := zip.NewWriter(&buf)
+	// 替换变量
 	err := fs.WalkDir(assets.StaticFs, fmt.Sprintf("template/%s", t.rule.FileName), func(filePath string, d fs.DirEntry, walkErr error) error {
 		if walkErr != nil {
 			return walkErr
@@ -110,6 +148,8 @@ func (t DefaultTemplate) GenZip() ([]byte, error) {
 		_, err = fileWriter.Write(fileData)
 		return err
 	})
+	// 处理添加文件
+	t.applyVariableFileRule(zw)
 
 	if err != nil {
 		return nil, err
