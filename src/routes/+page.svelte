@@ -1,5 +1,5 @@
 <script>
-	export let data;
+	let { data } = $props();
 	import { onMount } from 'svelte';
 	import Go from '$lib/wsam/wasm_exec';
 	import InputField from '$lib/component/InputField.svelte';
@@ -8,7 +8,16 @@
 	import CheckboxField from '$lib/component/CheckboxField.svelte';
 
 	const { rulesData = [] } = data;
-	$: genformData = rulesData[0].data;
+	let groupSelect = rulesData
+		.map((item) => item.data.group)
+		.filter((item, index, arr) => arr.indexOf(item) === index);
+	console.log(groupSelect);
+	let selectedGroup = $state(groupSelect[0]);
+	console.log(selectedGroup);
+	let groupRulesData = $state(rulesData.filter((item) => selectedGroup === item.data.group));
+	console.log(groupRulesData);
+	let genformData = $state(groupRulesData[0].data);
+	console.log(genformData);
 	/**
 	 * @type {Go | undefined}
 	 */
@@ -43,6 +52,11 @@
 		const rule = JSON.parse(e.target.value);
 		genformData = rule;
 	}
+	function groupSelectChange(e) {
+		selectedGroup = e.target.value;
+		groupRulesData = rulesData.filter((item) => selectedGroup === item.data.group);
+		genformData = groupRulesData[0].data;
+	}
 	onMount(() => {
 		go = new Go();
 		if (!WebAssembly.instantiateStreaming) {
@@ -70,9 +84,17 @@
 	<div class="mt-4 m-auto w-xs space-y-4">
 		<h1 class="text-3xl font-bold">application initializr</h1>
 		<div>
+			<legend class="fieldset-legend">选择分组</legend>
+			<select name="ruleName" onchange={groupSelectChange} class="select mb-8">
+				{#each groupSelect as group, index}
+					<option value={group} selected={index === 0}>
+						{group}
+					</option>
+				{/each}
+			</select>
 			<legend class="fieldset-legend">选择模板</legend>
 			<select name="ruleName" onchange={ruleNameSelectChange} class="select mb-8">
-				{#each rulesData as data, index}
+				{#each groupRulesData as data, index}
 					<option value={JSON.stringify(data.data)} selected={index === 0}>
 						{data.data?.name || data.filename}
 					</option>
