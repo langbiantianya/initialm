@@ -1,6 +1,6 @@
 {
-    "name": "go web基础模板",
-    "group": "web 模板",
+    "name": "数据上报模板1",
+    "group": "数据上报",
     "components": [
         {
             "label": "Hello Text?",
