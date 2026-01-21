@@ -7,7 +7,7 @@
 <select
 	name={data.key}
 	class="select validator"
-	required={data.validate.required}
+	required={data.validate?.required}
 	placeholder={data.tips}
 >
 	<option disabled selected value="">无</option>
@@ -17,5 +17,5 @@
 </select>
 
 <div  class="validator-hint">
-	{@html data.validate.required && '必填 <br />'}
+	{@html data.validate?.required && '必填 <br />'}
 </div >
