@@ -6,18 +6,19 @@
 	import FileInputField from '$lib/component/FileInputField.svelte';
 	import SelectField from '$lib/component/SelectField.svelte';
 	import CheckboxField from '$lib/component/CheckboxField.svelte';
+	import DataProcess from '$lib/process';
 
 	const { rulesData = [] } = data;
 	let groupSelect = rulesData
 		.map((item) => item.data.group)
 		.filter((item, index, arr) => arr.indexOf(item) === index);
-	console.log(groupSelect);
+	console.log('groupSelect', groupSelect);
 	let selectedGroup = $state(groupSelect[0]);
-	console.log(selectedGroup);
+	console.log('selectedGroup', selectedGroup);
 	let groupRulesData = $state(rulesData.filter((item) => selectedGroup === item.data.group));
-	console.log(groupRulesData);
+	console.log('groupRulesData', groupRulesData);
 	let genformData = $state(groupRulesData[0].data);
-	console.log(genformData);
+	console.log('genformData', genformData);
 	/**
 	 * @type {Go | undefined}
 	 */
@@ -57,6 +58,22 @@
 		groupRulesData = rulesData.filter((item) => selectedGroup === item.data.group);
 		genformData = groupRulesData[0].data;
 	}
+	/**
+	 * 去掉文件名的扩展名（基础版）
+	 * @param {string} filename - 带扩展名的文件名（如 "go_web.js"）
+	 * @returns {string} 去掉扩展名的文件名
+	 */
+	function removeFileExtension(filename) {
+		// 找到最后一个 . 的索引
+		const lastDotIndex = filename.lastIndexOf('.');
+		// 如果没有 . 或者 . 在开头（如 .env），直接返回原文件名
+		if (lastDotIndex === -1 || lastDotIndex === 0) {
+			return filename;
+		}
+		// 截取到最后一个 . 之前的部分
+		return filename.substring(0, lastDotIndex);
+	}
+
 	onMount(() => {
 		go = new Go();
 		if (!WebAssembly.instantiateStreaming) {
@@ -118,19 +135,40 @@
 						const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
 						data[key] = { type: 'file', value: base64 };
 					} else {
-						data[key] = { type: 'text', value: value };
+						if (data[key]) {
+							data[key].value = data[key].value = [
+								...((Array.isArray(data[key].value) && data[key].value) || [data[key].value]),
+								value
+							];
+							data[key].type = 'array';
+						} else {
+							data[key] = { type: 'text', value: value };
+						}
 					}
 				}
 				console.log(data);
+				let renderData = {};
+				for (const [key, value] of Object.entries(data)) {
+					const process = DataProcess[removeFileExtension(genformData.filename)];
+					if (process) {
+						const res = process[`porcess${key}`];
+						res ? (renderData[key] = res(value)) : (renderData[key] = value);
+						if(process.processGlobal){
+							renderData = process.processGlobal(renderData)
+						}
+					} else {
+						renderData[key] = value;
+					}
+				}
 				const b64zip = window.genZip(
 					JSON.stringify({
 						name: genformData.name,
-						data
+						renderData
 					})
 				);
 				const a = document.createElement('a');
 				a.href = `data:application/zip;base64,${b64zip}`;
-				a.download = 'go web基础模板.zip';
+				a.download = `${genformData.name || removeFileExtension(genformData.filename)}.zip`;
 				a.click();
 				a.remove();
 			}}

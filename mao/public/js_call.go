@@ -46,7 +46,6 @@ func GenZip(this js.Value, args []js.Value) interface{} {
 			data[key] = item.Value.(string)
 		default:
 			slog.Error("目前只处理文本类型", "key", key, "type", item.Type)
-			return js.ValueOf("目前只处理文本类型")
 		}
 	}
 	slog.Info("收到", "exData", exData, "data", data)

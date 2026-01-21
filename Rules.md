@@ -183,6 +183,69 @@ mao/assets/template/{模板名称} 模板目录
             }
 ```
 
+## 渲染数据钩子函数
+
+在关键位置对数据做个处理再往下一步
+
+### 提交前
+
+在你点击提交后，数据还没到wsam的适合先对数据做个处理，对输入的数据做个补充。  
+js的文件名为规则文件的文件名，钩子函数名为porcess+字段的key。然后手动在index.js中导入下你的函数。
+其中的processGlobal会在每个key的hook处理后在执行。
+
+举个例子，我要把多选框中的数据做个处理。
+
+[go_web.js](mao/assets/process/go_web.js)
+
+```javaScript
+/**
+ * 
+ * @param { {type:String,value:String | String []}} data 
+ * @returns {{type:String,value:any}}
+ */
+function porcessHelloCheckbox(data) {
+    if (Array.isArray(data.value)) {
+        return {
+            type: 'text',
+            value: data.value.join(",")
+        }
+    } else {
+        return data
+    }
+}
+
+/**
+ * 
+ * @param {{key:String,value:{type:String,value:String | String []}}} data 
+ * @returns {{key:String,value:{type:String,value:any}}}
+ */
+function processGlobal(data) {
+    return data
+
+}
+
+export default {
+    porcessHelloCheckbox,
+    processGlobal
+}
+```
+
+[index.js](mao/assets/process/index.js)
+
+```javaScript
+import go_web from "./go_web.js"
+
+const DataProcess = {
+    go_web
+}
+
+export default DataProcess
+```
+
+### 渲染时
+
+还没想好要怎么处理
+
 ## 记录
 
 ```js

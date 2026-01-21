@@ -5,7 +5,7 @@ export async function load() {
         // 从路径中提取文件名
         const filename = path.split('/').pop();
         return {
-            data: module.default
+            data: { ...module.default, filename }
         };
     });
     return { rulesData };
